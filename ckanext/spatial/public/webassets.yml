@@ -35,3 +35,22 @@ spatial_query_css:
     - js/vendor/leaflet/leaflet.css
     - js/vendor/leaflet.draw/leaflet.draw.css
     - css/spatial_query.css
+
+spatial_map_input_js:
+  filter: rjsmin
+  output: ckanext-spatial/%(version)s_spatial_map_input.js
+  extra:
+    preload:
+      - base/main
+  contents:
+    - js/vendor/leaflet/leaflet.js
+    - js/vendor/leaflet.draw/leaflet.draw.js
+    - js/spatial_map_input.js
+
+spatial_map_input_css:
+  filters: cssrewrite
+  output: ckanext-spatial/%(version)s_dataset_map.css
+  contents:
+    - js/vendor/leaflet/leaflet.css
+    - js/vendor/leaflet.draw/leaflet.draw.css
+    - css/spatial_map_input.css
