@@ -272,13 +272,13 @@ this.ckan.module('spatial-map-input', function (jQuery, _) {
 
         _populateLowerLeft: function (rectangle) {
             var southWest = rectangle.getBounds().getSouthWest();
-            var geometry = L.marker([southWest.lng, southWest.lat]).toGeoJSON().geometry;
+            var geometry = L.marker([southWest.lat, southWest.lng]).toGeoJSON().geometry;
             this.lowerLeftFieldElement.val(JSON.stringify(geometry));
         },
 
         _populateUpperRight: function (rectangle) {
             var northEast = rectangle.getBounds().getNorthEast();
-            var geometry = L.marker([northEast.lng, northEast.lat]).toGeoJSON().geometry;
+            var geometry = L.marker([northEast.lat, northEast.lng]).toGeoJSON().geometry;
             this.upperRightFieldElement.val(JSON.stringify(geometry));
         },
 
