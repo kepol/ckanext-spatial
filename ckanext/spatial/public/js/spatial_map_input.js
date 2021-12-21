@@ -10,6 +10,14 @@
  * - data-module-geometry => field selector
  * - data-module-extent => geojson
  * - data-module-max-bounds => geojson
+ *
+ * Things to note, GeoSpatial software (Leaflet and Leaflet Draw) has inconsistency,
+ * in this case, when drawing (Leaflet Draw lib) will return lng lat BUT labeled as lat lng, it is soo misleading.
+ * And when the value passed to Leaflet, it assume accept the correct lat lng format.
+ * This make the GeoJSON result inconsistent and hard to work with,
+ * for workaround there is a method _convertBoundsFromLngLatToLatLng() to handle this mapping.
+ *
+ * See more here https://macwright.com/lonlat/.
  */
 this.ckan.module('spatial-map-input', function (jQuery, _) {
     // Add arrow control.
@@ -233,9 +241,14 @@ this.ckan.module('spatial-map-input', function (jQuery, _) {
             switch (type) {
                 case 'rectangle':
                     existingLayer = this.rectangleLayer;
+
+                    // Let's beat the inconsistency by mapping them lat lng.
+                    // The Leaflet Draw (layer variable) return lng as lat, and lat as lng.
+                    var correctLatLngBounds = this._convertBoundsFromLngLatToLatLng(layer.getBounds());
+                    var rectangle = L.rectangle(correctLatLngBounds);
                     this.rectangleLayer = layer;
-                    this._populateLowerLeft(layer);
-                    this._populateUpperRight(layer);
+                    this._populateLowerLeft(rectangle.getBounds());
+                    this._populateUpperRight(rectangle.getBounds());
                     break;
                 case 'marker':
                     existingLayer = this.markerLayer;
@@ -258,9 +271,13 @@ this.ckan.module('spatial-map-input', function (jQuery, _) {
             var spatialMapInput = this;
             e.layers.eachLayer(function (layer) {
                 if (layer instanceof L.Rectangle) {
+                    // Let's beat the inconsistency by mapping them lat lng.
+                    // The Leaflet Draw (layer variable) return lng as lat, and lat as lng.
+                    var correctLatLngBounds = spatialMapInput._convertBoundsFromLngLatToLatLng(layer.getBounds());
+                    var rectangle = L.rectangle(correctLatLngBounds);
                     spatialMapInput.rectangleLayer = layer;
-                    spatialMapInput._populateLowerLeft(layer);
-                    spatialMapInput._populateUpperRight(layer);
+                    spatialMapInput._populateLowerLeft(rectangle.getBounds());
+                    spatialMapInput._populateUpperRight(rectangle.getBounds());
                 }
 
                 if (layer instanceof L.Marker) {
@@ -270,15 +287,28 @@ this.ckan.module('spatial-map-input', function (jQuery, _) {
             });
         },
 
-        _populateLowerLeft: function (rectangle) {
-            var southWest = rectangle.getBounds().getSouthWest();
-            var geometry = L.marker([southWest.lat, southWest.lng]).toGeoJSON().geometry;
+        _convertBoundsFromLngLatToLatLng: function (boundsLngLat) {
+            var southWest = boundsLngLat.getSouthWest();
+            var northEast = boundsLngLat.getNorthEast();
+
+            return L.latLngBounds([southWest.lng, southWest.lat], [northEast.lng, northEast.lat])
+        },
+
+        _populateLowerLeft: function (bounds) {
+            var southWest = bounds.getSouthWest();
+            var geometry = {
+                "type":"Point",
+                "coordinates": [southWest.lat, southWest.lng]
+            }
             this.lowerLeftFieldElement.val(JSON.stringify(geometry));
         },
 
-        _populateUpperRight: function (rectangle) {
-            var northEast = rectangle.getBounds().getNorthEast();
-            var geometry = L.marker([northEast.lat, northEast.lng]).toGeoJSON().geometry;
+        _populateUpperRight: function (bounds) {
+            var northEast = bounds.getNorthEast();
+            var geometry = {
+                "type":"Point",
+                "coordinates": [northEast.lat, northEast.lng]
+            }
             this.upperRightFieldElement.val(JSON.stringify(geometry));
         },
 
@@ -303,12 +333,12 @@ this.ckan.module('spatial-map-input', function (jQuery, _) {
         _onChangeGeometry: function (e) {
             // Auto calculate the lower left and upper right
             // and then trigger _onChangeLowerLeftUpperRight so that the map will be redrew.
-            var geometry = JSON.parse(this.geometryFieldElement.val()).coordinates;
-            var bounds = L.polygon(geometry).getBounds();
-            var rectangle = L.rectangle(bounds);
-
-            this._populateLowerLeft(rectangle);
-            this._populateUpperRight(rectangle);
+            if (this.geometryFieldElement.val().trim().length > 0) {
+                var geometry = JSON.parse(this.geometryFieldElement.val()).coordinates;
+                var bounds = L.polygon(geometry).getBounds();
+                this._populateLowerLeft(bounds);
+                this._populateUpperRight(bounds);
+            }
 
             // Trigger map re-draw.
             this._drawRectangle();
@@ -316,7 +346,7 @@ this.ckan.module('spatial-map-input', function (jQuery, _) {
 
         _lowerLeftUpperRightToRectangle: function () {
             // Get lower left and upper right geoJSON coordinates.
-            if (this.lowerLeftFieldElement.val().length > 0 && this.upperRightFieldElement.val().length > 0) {
+            if (this.lowerLeftFieldElement.val().trim().length > 0 && this.upperRightFieldElement.val().trim().length > 0) {
                 var lowerLeft = L.GeoJSON.coordsToLatLng(JSON.parse(this.lowerLeftFieldElement.val()).coordinates);
                 var upperRight = L.GeoJSON.coordsToLatLng(JSON.parse(this.upperRightFieldElement.val()).coordinates);
                 if (lowerLeft && upperRight) {
