@@ -207,6 +207,9 @@ this.ckan.module('spatial-map-input', function (jQuery, _) {
             // Listen to edited map draw:edited event.
             this.map.on('draw:edited', this._onDrawEdited);
 
+            // // Listen to deleted map draw:deleted event.
+            this.map.on('draw:deleted', this._onDrawDeleted);
+
             // Setup event listener to lower left, upper right, centroid and geometry field.
             this.lowerLeftFieldElement.on('change', this._onChangeLowerLeftUpperRight);
             this.upperRightFieldElement.on('change', this._onChangeLowerLeftUpperRight);
@@ -283,6 +286,22 @@ this.ckan.module('spatial-map-input', function (jQuery, _) {
                 if (layer instanceof L.Marker) {
                     spatialMapInput.markerLayer = layer;
                     spatialMapInput._populateCentroid(layer);
+                }
+            });
+        },
+
+        _onDrawDeleted: function (e) {
+            var spatialMapInput = this;
+            e.layers.eachLayer(function (layer) {
+                if (layer instanceof L.Rectangle) {
+                    spatialMapInput.rectangleLayer = null;
+                    spatialMapInput.lowerLeftFieldElement.val('');
+                    spatialMapInput.upperRightFieldElement.val('');
+                }
+
+                if (layer instanceof L.Marker) {
+                    spatialMapInput.markerLayer = null;
+                    spatialMapInput.centroidFieldElement.val('');
                 }
             });
         },
