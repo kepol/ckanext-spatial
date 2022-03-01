@@ -36,7 +36,7 @@ Contributing
 
 For contributing to ckanext-spatial or its documentation, follow the same
 guidelines that apply to CKAN core, described in
-`CONTRIBUTING <https://github.com/okfn/ckan/blob/master/CONTRIBUTING.rst>`_.
+`CONTRIBUTING <https://github.com/ckan/ckan/blob/master/CONTRIBUTING.md>`_.
 
 
 Copying and License
